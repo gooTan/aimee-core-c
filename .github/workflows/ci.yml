@@ -1,0 +1,22 @@
+name: core-c
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/prefix"
+        shell: bash
+      - run: cmake --build build --config Release --parallel 2 && cmake --install build --config Release
+        shell: bash
+      - run: cmake -S examples/connection-client -B consumer -DCMAKE_PREFIX_PATH="$PWD/prefix" && cmake --build consumer --config Release --parallel 2
+        shell: bash
+      - if: runner.os == 'Linux'
+        run: cmake -S examples/event-bus-module -B module -DCMAKE_PREFIX_PATH="$PWD/prefix" && cmake --build module --config Release --parallel 2
+        shell: bash
